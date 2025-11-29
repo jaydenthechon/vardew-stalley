@@ -6,12 +6,20 @@ class SoilTile(pygame.sprite.Sprite):
     def __init__(self, pos, group):
         super().__init__(group)
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        self.image.fill((139, 69, 19))  # Brown soil
-        self.rect = self.image.get_rect(topleft=pos)
-
+        self.image.fill((101, 67, 33))  # Dark brown soil
+        # Add some texture
+        pygame.draw.rect(self.image, (120, 80, 40), (4, 4, TILE_SIZE - 8, TILE_SIZE - 8))
 class WaterTile(pygame.sprite.Sprite):
     def __init__(self, pos, group):
         super().__init__(group)
+        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        self.image.set_colorkey((0, 0, 0))
+        # Draw water puddle effect
+        pygame.draw.ellipse(self.image, (64, 164, 223), (8, 12, TILE_SIZE - 16, TILE_SIZE - 24))
+        pygame.draw.ellipse(self.image, (100, 180, 240), (12, 16, TILE_SIZE - 24, TILE_SIZE - 32))
+        self.image.set_alpha(180)
+        self.rect = self.image.get_rect(topleft=pos)
+        self.z = LAYERS['soil water']
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.image.fill((100, 149, 237))  # Cornflower blue water
         self.image.set_alpha(100)
@@ -32,24 +40,40 @@ class Plant(pygame.sprite.Sprite):
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.image.fill((34, 139, 34))
         self.image.set_colorkey((0, 0, 0))
-        self.rect = self.image.get_rect(center=pos)
-        
-        self.update_visual()
-
     def update_visual(self):
         # Simple visual progression
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.image.set_colorkey((0, 0, 0))
         
+        center_x = TILE_SIZE // 2
+        center_y = TILE_SIZE // 2 + 10
+        
         # Draw plant based on age
         if self.age < 2:
-            # Seedling - small green circle
-            pygame.draw.circle(self.image, (50, 205, 50), (TILE_SIZE // 2, TILE_SIZE // 2), 5)
+            # Seedling - tiny sprout
+            pygame.draw.line(self.image, (34, 139, 34), (center_x, center_y), (center_x, center_y - 8), 2)
+            pygame.draw.circle(self.image, (50, 205, 50), (center_x, center_y - 8), 4)
         elif self.age < 4:
-            # Growing - bigger circle with stem
-            pygame.draw.rect(self.image, (34, 139, 34), (TILE_SIZE // 2 - 2, TILE_SIZE // 2, 4, 20))
-            pygame.draw.circle(self.image, (50, 205, 50), (TILE_SIZE // 2, TILE_SIZE // 2 - 5), 10)
+            # Growing - bigger with leaves
+            pygame.draw.rect(self.image, (34, 139, 34), (center_x - 2, center_y - 15, 4, 25))
+            pygame.draw.circle(self.image, (50, 205, 50), (center_x - 6, center_y - 10), 6)
+            pygame.draw.circle(self.image, (50, 205, 50), (center_x + 6, center_y - 10), 6)
+            pygame.draw.circle(self.image, (60, 220, 60), (center_x, center_y - 18), 8)
         else:
+            # Mature - full plant with fruit/veggie
+            pygame.draw.rect(self.image, (34, 139, 34), (center_x - 3, center_y - 20, 6, 30))
+            # Leaves
+            pygame.draw.circle(self.image, (40, 160, 40), (center_x - 10, center_y - 15), 8)
+            pygame.draw.circle(self.image, (40, 160, 40), (center_x + 10, center_y - 15), 8)
+            pygame.draw.circle(self.image, (50, 200, 50), (center_x, center_y - 22), 10)
+            # Fruit/crop - golden color
+            if self.plant_type == 'corn':
+                pygame.draw.ellipse(self.image, (255, 215, 0), (center_x - 6, center_y - 28, 12, 16))
+            elif self.plant_type == 'tomato':
+                pygame.draw.circle(self.image, (220, 20, 60), (center_x, center_y - 24), 8)
+            else:  # wheat
+                pygame.draw.rect(self.image, (255, 222, 173), (center_x - 4, center_y - 30, 8, 12))
+            self.harvestable = True
             # Mature - full plant
             pygame.draw.rect(self.image, (34, 139, 34), (TILE_SIZE // 2 - 3, TILE_SIZE // 2 - 10, 6, 30))
             pygame.draw.circle(self.image, (255, 215, 0), (TILE_SIZE // 2, TILE_SIZE // 2 - 15), 12)

@@ -28,27 +28,14 @@ class Level:
         self.day_length = 60  # seconds
         
     def setup(self):
-        # Create ground
-        for x in range(0, SCREEN_WIDTH * 2, TILE_SIZE):
-            for y in range(0, SCREEN_HEIGHT * 2, TILE_SIZE):
+        # Create ground with solid color (no checkerboard to avoid rendering issues)
+        for x in range(-TILE_SIZE * 5, SCREEN_WIDTH + TILE_SIZE * 5, TILE_SIZE):
+            for y in range(-TILE_SIZE * 5, SCREEN_HEIGHT + TILE_SIZE * 5, TILE_SIZE):
                 ground = pygame.Surface((TILE_SIZE, TILE_SIZE))
-                ground.fill((124, 252, 0))  # Lawn green
+                ground.fill((107, 142, 35))  # Olive drab green
                 Generic((x, y), ground, self.all_sprites, LAYERS['ground'])
         
-        # Create fence border
-        fence_positions = [
-            # Top fence
-            *[(x, 0) for x in range(0, SCREEN_WIDTH, TILE_SIZE)],
-            # Bottom fence
-            *[(x, SCREEN_HEIGHT - 20) for x in range(0, SCREEN_WIDTH, TILE_SIZE)],
-            # Left fence
-            *[(0, y) for y in range(0, SCREEN_HEIGHT, TILE_SIZE)],
-            # Right fence
-            *[(SCREEN_WIDTH - 20, y) for y in range(0, SCREEN_HEIGHT, TILE_SIZE)]
-        ]
-        
-        for pos in fence_positions[:20]:  # Limit fences
-            fence = Fence(pos, [self.all_sprites, self.collision_sprites])
+        # Remove fence borders - no invisible barriers!
         
         # Create trees
         tree_positions = [
@@ -125,8 +112,10 @@ class CameraGroup(pygame.sprite.Group):
         self.offset.x = player.rect.centerx - SCREEN_WIDTH / 2
         self.offset.y = player.rect.centery - SCREEN_HEIGHT / 2
         
-        # Draw sprites sorted by z-index
-        for sprite in sorted(self.sprites(), key=lambda sprite: sprite.rect.centery):
-            offset_rect = sprite.rect.copy()
-            offset_rect.center -= self.offset
-            self.display_surface.blit(sprite.image, offset_rect)
+        # Sort all sprites by their z-layer first, then by y position
+        sorted_sprites = sorted(self.sprites(), key=lambda sprite: (sprite.z if hasattr(sprite, 'z') else LAYERS['main'], sprite.rect.centery))
+        
+        # Draw all sprites with proper offset
+        for sprite in sorted_sprites:
+            offset_pos = sprite.rect.topleft - self.offset
+            self.display_surface.blit(sprite.image, offset_pos)

@@ -7,10 +7,15 @@ class Player(pygame.sprite.Sprite):
         super().__init__(group)
 
         #setup
-        self.image = pygame.Surface((32, 64))
-        self.image.fill('green')
+        self.import_assets()
+        self.status = 'down_idle'
+        self.frame_index = 0
+        self.animation_speed = 6
+        
+        self.image = self.animations[self.status][self.frame_index]
         self.rect = self.image.get_rect(center = pos)
         self.hitbox = self.rect.inflate(-20, -40)
+        self.z = LAYERS['main']
 
         #movement
         self.direction = pygame.math.Vector2()
@@ -19,7 +24,6 @@ class Player(pygame.sprite.Sprite):
         self.collision_sprites = collision_sprites
 
         #status
-        self.status = 'down'
         self.facing_direction = 'down'
 
         #tools
@@ -45,6 +49,51 @@ class Player(pygame.sprite.Sprite):
         self.tool_active = False
         self.tool_timer = 0
         self.soil_layer = soil_layer
+
+    def import_assets(self):
+        self.animations = {
+            'up': [], 'down': [], 'left': [], 'right': [],
+            'up_idle': [], 'down_idle': [], 'left_idle': [], 'right_idle': []
+        }
+        
+        # Create simple animated sprites for each direction
+        for animation in self.animations.keys():
+            # Create 4 frames for each animation
+            for i in range(4):
+                surf = pygame.Surface((32, 64))
+                surf.set_colorkey((0, 0, 0))
+                
+                # Base character
+                pygame.draw.rect(surf, (210, 180, 140), (8, 10, 16, 16))  # Head
+                pygame.draw.rect(surf, (70, 130, 180), (6, 26, 20, 18))  # Body
+                pygame.draw.circle(surf, (139, 69, 19), (16, 14), 3)  # Eye
+                
+                # Animate legs based on frame
+                if 'idle' not in animation:
+                    # Walking animation - alternate legs
+                    if i % 2 == 0:
+                        pygame.draw.rect(surf, (50, 50, 150), (6, 44, 8, 20))  # Left leg forward
+                        pygame.draw.rect(surf, (50, 50, 150), (18, 46, 8, 18))  # Right leg back
+                    else:
+                        pygame.draw.rect(surf, (50, 50, 150), (6, 46, 8, 18))  # Left leg back
+                        pygame.draw.rect(surf, (50, 50, 150), (18, 44, 8, 20))  # Right leg forward
+                else:
+                    # Idle - both legs same
+                    pygame.draw.rect(surf, (50, 50, 150), (6, 44, 8, 20))
+                    pygame.draw.rect(surf, (50, 50, 150), (18, 44, 8, 20))
+                
+                # Flip for left direction
+                if 'left' in animation:
+                    surf = pygame.transform.flip(surf, True, False)
+                
+                self.animations[animation].append(surf)
+
+    def animate(self, dt):
+        self.frame_index += self.animation_speed * dt
+        if self.frame_index >= len(self.animations[self.status]):
+            self.frame_index = 0
+        
+        self.image = self.animations[self.status][int(self.frame_index)]
 
     def use_tool(self):
         if self.selected_tool == 'hoe':
@@ -162,4 +211,5 @@ class Player(pygame.sprite.Sprite):
         self.input()
         self.update_status()
         self.update_tool_timer(dt)
+        self.animate(dt)
         self.move(dt)
